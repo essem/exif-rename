@@ -1,23 +1,21 @@
+// sudo apt-get install -y libimage-exiftool-perl
+
 const fs = require('fs');
 const path = require('path');
 const Q = require('q');
-const ExifImage = require('exif').ExifImage;
+const exec = require('child_process').exec;
 
 function getExif(filename) {
   const deferred = Q.defer();
-  try {
-    new ExifImage({ image: filename }, (error, exifData) => {
-      if (error) {
-        error.filename = filename;
-        deferred.reject(error);
-      } else {
-        deferred.resolve(exifData);
-      }
-    });
-  } catch (error) {
-    error.filename = filename;
-    deferred.reject(error);
-  }
+  exec(`exiftool -j ${filename}`, (error, stdout, stderr) => {
+    if (error) {
+      err.filename = filename;
+      deferred.reject(error);
+      return;
+    }
+
+    deferred.resolve(JSON.parse(stdout)[0]);
+  });
 
   return deferred.promise;
 }
@@ -29,8 +27,9 @@ Q.nfcall(fs.readdir, dirname)
   Q.all(files.map(file => (
     getExif(path.resolve(dirname, file))
     .then(exifData => {
-      let createDate = exifData.exif.CreateDate || exifData.image.CreateDate;
-      const newName = createDate.replace(/:/g, '').replace(' ', '_') + '.jpg';
+      const ext = path.extname(file);
+      let createDate = exifData.CreateDate || exifData.DateTimeOriginal;
+      const newName = createDate.replace(/:/g, '').replace(' ', '_') + ext;
       return { file, newName };
     })
   )))
