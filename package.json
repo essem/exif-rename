@@ -4,11 +4,19 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "eslint": "eslint .",
+    "jscs": "jscs ."
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "q": "^1.4.1"
+  },
+  "devDependencies": {
+    "eslint": "^2.9.0",
+    "eslint-config-airbnb-base": "^2.0.0",
+    "eslint-plugin-import": "^1.6.1",
+    "jscs": "^3.0.3"
   }
 }

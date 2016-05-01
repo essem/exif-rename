@@ -7,9 +7,8 @@ const exec = require('child_process').exec;
 
 function getExif(filename) {
   const deferred = Q.defer();
-  exec(`exiftool -j ${filename}`, (error, stdout, stderr) => {
+  exec(`exiftool -j ${filename}`, (error, stdout) => {
     if (error) {
-      err.filename = filename;
       deferred.reject(error);
       return;
     }
@@ -28,7 +27,7 @@ Q.nfcall(fs.readdir, dirname)
     getExif(path.resolve(dirname, file))
     .then(exifData => {
       const ext = path.extname(file);
-      let createDate = exifData.CreateDate || exifData.DateTimeOriginal;
+      const createDate = exifData.CreateDate || exifData.DateTimeOriginal;
       const newName = createDate.replace(/:/g, '').replace(' ', '_') + ext;
       return { file, newName };
     })
@@ -42,8 +41,8 @@ Q.nfcall(fs.readdir, dirname)
     return Q.nfcall(fs.rename, oldName, newName);
   }));
 })
-.then(results => {
-  console.log(`done!`);
+.then(() => {
+  console.log('done!');
 })
 .catch(error => {
   console.error(error);
