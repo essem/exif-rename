@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "q": "^1.4.1"
+    "bluebird": "^3.3.5"
   },
   "devDependencies": {
     "eslint": "^2.9.0",

@@ -1,44 +1,39 @@
 // sudo apt-get install -y libimage-exiftool-perl
 
-const fs = require('fs');
 const path = require('path');
-const Q = require('q');
-const exec = require('child_process').exec;
+const Promise = require('bluebird');
+const fs = Promise.promisifyAll(require('fs'));
+const execAsync = Promise.promisify(require('child_process').exec);
 
-function getExif(filename) {
-  const deferred = Q.defer();
-  exec(`exiftool -j ${filename}`, (error, stdout) => {
-    if (error) {
-      deferred.reject(error);
-      return;
-    }
-
-    deferred.resolve(JSON.parse(stdout)[0]);
-  });
-
-  return deferred.promise;
+if (process.argv.length !== 3) {
+  console.log('usage: npm start [dirname]');
+  process.exit(1);
 }
 
-const dirname = 'images';
+const dirname = process.argv[2];
+console.log(`Process ${dirname} directory...`);
 
-Q.nfcall(fs.readdir, dirname)
+fs.readdirAsync(dirname)
 .then(files => (
-  Q.all(files.map(file => (
-    getExif(path.resolve(dirname, file))
-    .then(exifData => {
-      const ext = path.extname(file);
-      const createDate = exifData.CreateDate || exifData.DateTimeOriginal;
-      const newName = createDate.replace(/:/g, '').replace(' ', '_') + ext;
-      return { file, newName };
-    })
-  )))
+  Promise.all(files.map(file => {
+    const filename = path.resolve(dirname, file);
+    return execAsync(`exiftool -j ${filename}`)
+      .then(stdout => JSON.parse(stdout)[0])
+      .then(exifData => {
+        const ext = path.extname(file);
+        const createDate = exifData.CreateDate || exifData.DateTimeOriginal;
+        const newName = createDate.replace(/:/g, '').replace(' ', '_') + ext;
+        return { file, newName };
+      });
+  }))
 ))
 .then(results => {
   console.log(`${results.length} files will be renamed...`);
-  return Q.all(results.map(result => {
+  return Promise.all(results.map(result => {
     const oldName = path.resolve(dirname, result.file);
     const newName = path.resolve(dirname, result.newName);
-    return Q.nfcall(fs.rename, oldName, newName);
+    console.log(`${oldName} -> ${newName}`);
+    return fs.renameAsync(oldName, newName);
   }));
 })
 .then(() => {
